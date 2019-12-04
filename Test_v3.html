@@ -21,16 +21,20 @@
   <svg>
   </svg>
   <!-- Connect using localhost:8000 -->
-  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b2dd5b075b17ad42e2dfe28fb5100e5c"></script>
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b2dd5b075b17ad42e2dfe28fb5100e5c"></script> 
+  <!-- <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=dff3b9ee2e4bf708f7aa8906086518c5"></script> -->
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script>
 
   //Global variables
   var raw_data = [];
-  var table_data = [];
-  var cols = ['Stop ID', 'ride', 'leave'];
+  var raw_time_data = [];
 
   var graph_data = [];
+  var table_data = [];
+  var table2_data = [];
+
+  var cols = ['Stop ID', 'ride', 'leave'];
 
   //Import CSV data
   d3.csv("data_201908.csv").then(function(data)
@@ -38,6 +42,13 @@
     raw_data = data;
     //console.log(raw_data[23]);
   });
+
+  //Import time data. Base data is on google drive
+  d3.csv("tdata_201908.csv").then(function(data)
+  {
+    raw_time_data = data;
+  });
+
 
   var container = document.getElementById('map'); //지도를 담을 영역의 DOM 레퍼런스
   var options = { //지도를 생성할 때 필요한 기본 옵션
@@ -188,6 +199,7 @@
   {
     //Initialize table entries
     table_data = [];
+    table2_data = [];
     for(let i = 0 ; i < stops.length ; table_data.push({stopid: stops[i++], ride: 0, leave: 0}));
 
     //Get values and update table
@@ -232,27 +244,88 @@
         graph_data[day].ride += parseInt(raw_data[i].승차총승객수);
         graph_data[day].leave += parseInt(raw_data[i].하차총승객수);
 
-
-        //Search the bus line and append it
-	let match = false;
-        for(let k = 0 ; k < table2_data.length ; k++)
-        {
-		//if(table2_data[k].
-        }
-
-	if(match)
-	{
-		break;
-	}
-
-	//Push again
-
 	break;
       }
     }
 
     console.log("This is log for bar? line? graph");
     console.log(graph_data);
+
+    for(let i = 0 ; i < 24 ; table2_data.push({hour: (i++), ride: 0, leave: 0}));
+
+    for(let i = 0 ; i < raw_time_data.length ; i++)
+    {
+      for(let j = 0 ; j < stops.length ; j++)
+      {
+        if(parseInt(raw_time_data[i].버스정류장ID) !== stops[j])
+	{
+          continue;
+	}
+
+        table2_data[0].ride += parseInt(raw_time_data[i].a00시승차총승객수);
+        table2_data[1].ride += parseInt(raw_time_data[i].a1시승차총승객수);
+        table2_data[2].ride += parseInt(raw_time_data[i].a2시승차총승객수);
+        table2_data[3].ride += parseInt(raw_time_data[i].a3시승차총승객수);
+        table2_data[4].ride += parseInt(raw_time_data[i].a4시승차총승객수);
+        table2_data[5].ride += parseInt(raw_time_data[i].a5시승차총승객수);
+        table2_data[6].ride += parseInt(raw_time_data[i].a6시승차총승객수);
+        table2_data[7].ride += parseInt(raw_time_data[i].a7시승차총승객수);
+        table2_data[8].ride += parseInt(raw_time_data[i].a8시승차총승객수);
+        table2_data[9].ride += parseInt(raw_time_data[i].a9시승차총승객수);
+        table2_data[10].ride += parseInt(raw_time_data[i].a10시승차총승객수);
+        table2_data[11].ride += parseInt(raw_time_data[i].a11시승차총승객수);
+        table2_data[12].ride += parseInt(raw_time_data[i].a12시승차총승객수);
+        table2_data[13].ride += parseInt(raw_time_data[i].a13시승차총승객수);
+        table2_data[14].ride += parseInt(raw_time_data[i].a14시승차총승객수);
+        table2_data[15].ride += parseInt(raw_time_data[i].a15시승차총승객수);
+        table2_data[16].ride += parseInt(raw_time_data[i].a16시승차총승객수);
+        table2_data[17].ride += parseInt(raw_time_data[i].a17시승차총승객수);
+        table2_data[18].ride += parseInt(raw_time_data[i].a18시승차총승객수);
+        table2_data[19].ride += parseInt(raw_time_data[i].a19시승차총승객수);
+        table2_data[20].ride += parseInt(raw_time_data[i].a20시승차총승객수);
+        table2_data[21].ride += parseInt(raw_time_data[i].a21시승차총승객수);
+        table2_data[22].ride += parseInt(raw_time_data[i].a22시승차총승객수);
+        table2_data[23].ride += parseInt(raw_time_data[i].a23시승차총승객수);
+
+        table2_data[0].leave += parseInt(raw_time_data[i].a00시하차총승객수);
+        table2_data[1].leave += parseInt(raw_time_data[i].a1시하차총승객수);
+        table2_data[2].leave += parseInt(raw_time_data[i].a2시하차총승객수);
+        table2_data[3].leave += parseInt(raw_time_data[i].a3시하차총승객수);
+        table2_data[4].leave += parseInt(raw_time_data[i].a4시하차총승객수);
+        table2_data[5].leave += parseInt(raw_time_data[i].a5시하차총승객수);
+        table2_data[6].leave += parseInt(raw_time_data[i].a6시하차총승객수);
+        table2_data[7].leave += parseInt(raw_time_data[i].a7시하차총승객수);
+        table2_data[8].leave += parseInt(raw_time_data[i].a8시하차총승객수);
+        table2_data[9].leave += parseInt(raw_time_data[i].a9시하차총승객수);
+        table2_data[10].leave += parseInt(raw_time_data[i].a10시하차총승객수);
+        table2_data[11].leave += parseInt(raw_time_data[i].a11시하차총승객수);
+        table2_data[12].leave += parseInt(raw_time_data[i].a12시하차총승객수);
+        table2_data[13].leave += parseInt(raw_time_data[i].a13시하차총승객수);
+        table2_data[14].leave += parseInt(raw_time_data[i].a14시하차총승객수);
+        table2_data[15].leave += parseInt(raw_time_data[i].a15시하차총승객수);
+        table2_data[16].leave += parseInt(raw_time_data[i].a16시하차총승객수);
+        table2_data[17].leave += parseInt(raw_time_data[i].a17시하차총승객수);
+        table2_data[18].leave += parseInt(raw_time_data[i].a18시하차총승객수);
+        table2_data[19].leave += parseInt(raw_time_data[i].a19시하차총승객수);
+        table2_data[20].leave += parseInt(raw_time_data[i].a20시하차총승객수);
+        table2_data[21].leave += parseInt(raw_time_data[i].a21시하차총승객수);
+        table2_data[22].leave += parseInt(raw_time_data[i].a22시하차총승객수);
+        table2_data[23].leave += parseInt(raw_time_data[i].a23시하차총승객수);
+
+
+
+        //console.log(stops[j]);
+        //console.log(raw_time_data[i].23시승차총승객수);	//-_-;;
+        //console.log(raw_time_data[i][0]);
+        //console.log(raw_time_data[i]);
+
+        break;
+
+      }
+    }
+
+    console.log("This is log for time data (Feat. stupid javascript array)");
+    console.log(table2_data);
 
   }
 
