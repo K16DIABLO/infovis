@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset = "utf-8">
+  <title>InfoVis Project</title>
+</head>
+<body>
+
+
+  <!--Set position for map and table-->
+  <div id="selector" style="position: absolute; top:80px; left:10px; width: 150px; height: 50px">
+  </div>
+  <div id="map" style="position: absolute; top: 150px; left: 10px; width: 500px; height: 400px;">
+  </div>
+  <div id="table" style="position: absolute; top:150px; left:550px; width: 500px; height: 400px;">
+  </div>
+
+  <p>
+    <button onclick="setBounds()">지도 범위 재설정 하기</button>
+  </p>
+  <svg>
+  </svg>
+  <!-- Connect using localhost:8000 -->
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=dff3b9ee2e4bf708f7aa8906086518c5"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script>
+
+  //Global variables
+  var raw_data = [];
+  var table_data = [];
+  var cols = ['Stop ID', 'ride', 'leave'];
+
+  var graph_data = [];
+
+  //Import CSV data
+  d3.csv("data_201908.csv").then(function(data)
+  {
+    raw_data = data;
+    //console.log(raw_data[23]);
+  });
+
+  var container = document.getElementById('map'); //지도를 담을 영역의 DOM 레퍼런스
+  var options = { //지도를 생성할 때 필요한 기본 옵션
+    center: new kakao.maps.LatLng(37.5165, 127.020), //지도의 중심좌표.
+    level: 3 //지도의 레벨(확대, 축소 정도)
+  };
+  
+  var map = new kakao.maps.Map(container, options); //지도 생성 및 객체 리턴
+
+  // 버튼을 클릭하면 아래 배열의 좌표들이 모두 보이게 지도 범위를 재설정합니다
+  var sub_points = [
+    {
+      content: '<div>양재역</div>',
+      latlng: new kakao.maps.LatLng(37.4845, 127.0342),   // 37.4845, 127.0342 양재역
+      stops: [22289, 23841, 22290, 23827, 22003, 22004, 22270, 23920, 23918, 23921, 22440, 22903, 23318, 22999, 22909, 22919]
+    },
+    {
+      content: '<div>강남역</div>',
+      latlng: new kakao.maps.LatLng(37.498, 127.0277),    // 37.498, 127.0277 강남역
+      stops: [22173, 23900, 22339, 23285, 23617, 23813, 22885, 22532, 22167, 22859, 22850, 23287, 23814, 23284, 22997, 22600, 22652, 22653, 22654, 22348]
+
+    },
+    {
+      content: '<div>산논현역</div>',
+      latlng: new kakao.maps.LatLng(37.5045, 127.0245),    // 37.5045, 127.0245 산논현역
+      stops: [23266, 23580, 23121, 23641, 22407, 22193, 22172, 23286, 22409, 22413, 22412, 22410, 22408, 22411, 22406]
+    },
+    {
+      content: '<div>논현역</div>',
+      latlng: new kakao.maps.LatLng(37.5111, 127.0213),    // 37.5111, 127.0213 논현역
+      stops: [22587, 22191, 22013, 22014]
+    },
+    {
+      content: '<div>신사역</div>',
+      latlng: new kakao.maps.LatLng(37.5162, 127.0195),    // 37.5162, 127.0195 신사역
+      stops: [22577, 22016, 22015, 22185, 22186, 23109]
+    }
+  ];
+  var bus_points = [
+    {
+      content: '<div>뱅뱅사거리</div>',
+      latlng: new kakao.maps.LatLng(37.489, 127.032),    //  37.489, 127.032 뱅뱅사거리
+      stops: [22125, 22126, 22887, 78577, 22005, 22006, 78259, 78037, 23319, 23294, 23321]
+    }
+  ];
+  var bounds = new kakao.maps.LatLngBounds();       // 지도를 재설정할 범위정보를 가지고 있을 LatLngBounds 객체를 생성합니다
+  var imgSrc = 'http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
+      imgSize = new kakao.maps.Size(32, 35),
+      imgOpt = {offset: new kakao.maps.Point(27, 69)};
+
+  
+  function setBounds() {
+    // LatLngBounds 객체에 추가된 좌표들을 기준으로 지도의 범위를 재설정합니다
+    // 이때 지도의 중심좌표와 레벨이 변경될 수 있습니다
+    map.setBounds(bounds);
+
+  }
+
+  var markers = [];
+  for (i = 0; i < sub_points.length; i++) {   // 배열의 좌표들이 잘 보이게 마커를 지도에 추가합니다
+    marker = new kakao.maps.Marker({
+        position : sub_points[i].latlng,
+        clickable: true
+     });
+    var infowindow = new kakao.maps.InfoWindow({
+        content : sub_points[i].content
+    });
+    markers.push(marker);
+    kakao.maps.event.addListener(marker, 'mouseover', mouseOverListener(map, marker, infowindow));
+    kakao.maps.event.addListener(marker, 'mouseout', mouseOutListener(infowindow));
+    kakao.maps.event.addListener(marker, 'click', mouseClickListener(map, marker, sub_points[i]));
+    bounds.extend(sub_points[i].latlng);                                   // LatLngBounds 객체에 좌표를 추가합니다
+  }
+
+  for(i = 0; i < bus_points.length; i++){
+    var markerImage = new kakao.maps.MarkerImage(imgSrc, imgSize, imgOpt);
+
+    marker = new kakao.maps.Marker({
+          position: bus_points[i].latlng,
+          image: markerImage, // 마커이미지 설정
+          clickable: true
+        });
+    var infowindow = new kakao.maps.InfoWindow({
+        content : bus_points[i].content
+    });
+    markers.push(marker);
+    kakao.maps.event.addListener(marker, 'mouseover', mouseOverListener(map, marker, infowindow));
+    kakao.maps.event.addListener(marker, 'mouseout', mouseOutListener(infowindow));
+    kakao.maps.event.addListener(marker, 'click', mouseClickListener(map, marker, bus_points[i]));
+    bounds.extend(bus_points[i].latlng);                                   // LatLngBounds 객체에 좌표를 추가합니다
+
+  }
+
+  for (var i = 0; i < markers.length; i++){
+    markers[i].setMap(map);
+  }
+
+  function mouseOverListener(map, marker, infowindow){
+    return function(){
+      infowindow.open(map, marker);
+    }
+  }
+  function mouseOutListener(infowindow){
+    return function(){
+      infowindow.close();
+    }
+  }
+  function mouseClickListener(map, marker, point){
+    return function(){
+      var content = '';
+      var customOverlay = new kakao.maps.CustomOverlay({
+          map: map,
+          position: marker.getPosition(),
+          // content: public_transform_data_by_id(point.id),
+          content: content
+      })
+      customOverlay.setMap(map);
+
+      //Doing...
+      update_data(raw_data, point.stops);
+      //draw_table(raw_data, point.stops);
+
+    }
+  }
+
+  //Table and etc. rendering
+  map.setBounds(bounds);
+  map.addOverlayMapTypeId(kakao.maps.MapTypeId.TRAFFIC);
+
+  //Table-
+  let table = d3.selectAll('body').select('#table');
+  let thead = table.append('thead');
+  let tbody = table.append('tbody');
+
+  thead.append('tr')
+    .selectAll('th')
+    .data(cols)
+    .enter()
+    .append('th')
+    .attr('width', '80px')
+    .attr('height', '40px')
+    .merge(thead)
+    .text(d => d)
+    .attr('align', 'left')
+    .attr('text-layout', 'fixed');
+
+  function update_data(raw_data, stops)
+  {
+    //Initialize table entries
+    table_data = [];
+    for(let i = 0 ; i < stops.length ; table_data.push({stopid: stops[i++], ride: 0, leave: 0}));
+
+    //Get values and update table
+    for(let i = 0 ; i < raw_data.length ; i++)
+    {
+      for(let j = 0 ; j < table_data.length ; j++)
+      {
+        if(parseInt(raw_data[i].버스정류장ARS번호) !== table_data[j].stopid)
+	{
+          continue;
+	}
+
+        table_data[j].ride += parseInt(raw_data[i].승차총승객수);
+        table_data[j].leave += parseInt(raw_data[i].하차총승객수);
+	break;
+      }
+    }
+
+    console.log("This is log for table");
+    console.log(table_data);
+
+    //사용일자: 0801: Thursday
+    //Sun: 0, Mon: 1, Sat: 6
+    graph_data = [];
+    table2_data = [];
+    days_ = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+    for(let i = 0 ; i < days_.length ; graph_data.push({day: days_[i++], ride: 0, leave: 0}));
+
+    for(let i = 0 ; i < raw_data.length ; i++)
+    {
+      for(let j = 0 ; j < table_data.length ; j++)
+      {
+        if(parseInt(raw_data[i].버스정류장ARS번호) !== table_data[j].stopid)
+	{
+          continue;
+	}
+
+        day = parseInt(raw_data[i].사용일자) % 100;
+        day = (day + 3) % 7
+
+        graph_data[day].ride += parseInt(raw_data[i].승차총승객수);
+        graph_data[day].leave += parseInt(raw_data[i].하차총승객수);
+
+
+        //Search the bus line and append it
+	let match = false;
+        for(let k = 0 ; k < table2_data.length ; k++)
+        {
+		//if(table2_data[k].
+        }
+
+	if(match)
+	{
+		break;
+	}
+
+	//Push again
+
+	break;
+      }
+    }
+
+    console.log("This is log for bar? line? graph");
+    console.log(graph_data);
+
+  }
+
+
+  function draw_table(raw_data, stops)
+  {
+
+    //???
+    let tr = tbody.selectAll('tr').data(table_data.stopid);
+    let td = tr.enter()
+      .append('tr')
+      .merge(tr)
+      .selectAll('td')
+      .data(d => cols.map(col => [col, d[col]], tuple => tuple[0]));
+    
+    td.enter()
+      .append('td')
+      .merge(td)
+      .attr('width', '80px')
+      .attr('height', '40px')
+      .text(d => d[1]);
+
+  }
+
+  function public_transform_data_by_id(obj_id){
+    //get data with id(~~역 or ~~역 근처 정류장 aggregate)
+    return
+  }
+
+  
+
+  </script>
+</body>
