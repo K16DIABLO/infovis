@@ -12,8 +12,8 @@
   </div>
   <div id="map" style="position: absolute; top: 150px; left: 10px; width: 500px; height: 400px;">
   </div>
-  <div id="table" style="position: absolute; top:150px; left:550px; width: 500px; height: 400px;">
-  </div>
+  <svg id="table" style="position: absolute; top:150px; left:550px; width: 500px; height: 400px;">
+  </svg>
 
   <p>
     <button onclick="setBounds()">지도 범위 재설정 하기</button>
@@ -27,6 +27,11 @@
   <script>
 
   //Global variables
+  let cell_width = 80;
+  let cell_height = 30;
+  let table_width = 500;
+  let table_height = 400;
+  let padding = 20;
   var raw_data = [];
   var raw_time_data = [];
 
@@ -34,7 +39,7 @@
   var table_data = [];
   var table2_data = [];
 
-  var cols = ['Stop ID', 'ride', 'leave'];
+  var cols = ['Stop ID', 'ride', 'leave', 'Stop name'];
 
   //Import CSV data
   d3.csv("data_201908.csv").then(function(data)
@@ -63,35 +68,34 @@
     {
       content: '<div>양재역</div>',
       latlng: new kakao.maps.LatLng(37.4845, 127.0342),   // 37.4845, 127.0342 양재역
-      stops: [22289, 23841, 22290, 23827, 22003, 22004, 22270, 23920, 23918, 23921, 22440, 22903, 23318, 22999, 22909, 22919]
+      stops: [22003, 22004, 22270, 22289, 22290, 22440, 23318, 23918, 23920, 23921]
     },
     {
       content: '<div>강남역</div>',
       latlng: new kakao.maps.LatLng(37.498, 127.0277),    // 37.498, 127.0277 강남역
-      stops: [22173, 23900, 22339, 23285, 23617, 23813, 22885, 22532, 22167, 22859, 22850, 23287, 23814, 23284, 22997, 22600, 22652, 22653, 22654, 22348]
-
+      stops: [22167, 22173, 22339, 22348, 22532, 22654, 22850, 22859, 22885, 23284, 23285, 23287]
     },
     {
       content: '<div>산논현역</div>',
       latlng: new kakao.maps.LatLng(37.5045, 127.0245),    // 37.5045, 127.0245 산논현역
-      stops: [23266, 23580, 23121, 23641, 22407, 22193, 22172, 23286, 22409, 22413, 22412, 22410, 22408, 22411, 22406]
+      stops: [22172, 22193, 23121, 23266, 23286, 23641]
     },
     {
       content: '<div>논현역</div>',
       latlng: new kakao.maps.LatLng(37.5111, 127.0213),    // 37.5111, 127.0213 논현역
-      stops: [22587, 22191, 22013, 22014]
+      stops: [22013, 22014, 22191, 22587]
     },
     {
       content: '<div>신사역</div>',
       latlng: new kakao.maps.LatLng(37.5162, 127.0195),    // 37.5162, 127.0195 신사역
-      stops: [22577, 22016, 22015, 22185, 22186, 23109]
+      stops: [22015, 22016, 22185, 22186, 22577, 23109]
     }
   ];
   var bus_points = [
     {
       content: '<div>뱅뱅사거리</div>',
       latlng: new kakao.maps.LatLng(37.489, 127.032),    //  37.489, 127.032 뱅뱅사거리
-      stops: [22125, 22126, 22887, 78577, 22005, 22006, 78259, 78037, 23319, 23294, 23321]
+      stops: [22125, 22126, 22887, 22005, 22006, 23319, 23294, 23321]
     }
   ];
   var bounds = new kakao.maps.LatLngBounds();       // 지도를 재설정할 범위정보를 가지고 있을 LatLngBounds 객체를 생성합니다
@@ -162,6 +166,7 @@
       // draw_table(raw_data, point.stops);
     }
   }
+  function translate(x, y) { return 'translate(' + x + ', ' + y +')'; }
 
   //Table and etc. rendering
   map.setBounds(bounds);
@@ -169,27 +174,34 @@
 
 
   //Table-
-  let table = d3.selectAll('body').select('#table');
-  let thead = table.append('thead');
-  let tbody = table.append('tbody');
-
-  thead.append('tr')
-    .selectAll('th')
-    .data(cols)
-    .enter()
-    .append('th')
-    .attr('width', '80px')
-    .attr('height', '40px')
-    .merge(thead)
-    .text(d => d)
-    .attr('align', 'left')
-    .attr('text-layout', 'fixed');
+  let body = d3.select('body');
+  let table = body.select('svg#table');
+  let thead = table.append('g')
+                   .attr('id', 'thead')
+                   .attr('width', table_width - 2 * padding)
+                   .attr('height', cell_height)
+                   .attr('transform', translate(padding, padding));
+  let tbody = table.append('g')
+                   .attr('transform', translate(padding, padding+5))
+                   .attr('id', 'tbody')
+                   .attr('width', table_width)
+                   .attr('height', table_height - cell_height);
+  thead.selectAll('text')
+        .data(cols)
+        .enter()
+        .append('text')
+        .attr('transform', (_,i) => translate(i*cell_width, 0))
+        .attr('width', cell_width)
+        .attr('height', cell_height)
+        .attr('align', 'center')
+        .attr('text-layout', 'fixed')
+        .text(d => d);
 
   function update_data(raw_data, stops){
       //Initialize table entries
       table_data = [];
       // table2_data = [];
-      for(let i = 0 ; i < stops.length ; table_data.push({stopid: stops[i++], ride: 0, leave: 0}));
+      for(let i = 0 ; i < stops.length ; table_data.push({stopid: stops[i++], ride: 0, leave: 0, name:''}));
 
       //Get values and update table
       for(let i = 0 ; i < raw_data.length ; i++){
@@ -197,6 +209,7 @@
           if(parseInt(raw_data[i].버스정류장ARS번호) !== table_data[j].stopid){
             continue;
           }
+          table_data[j].name = raw_data[i].역명;
           table_data[j].ride += parseInt(raw_data[i].승차총승객수);
           table_data[j].leave += parseInt(raw_data[i].하차총승객수);
   	      break;
@@ -302,29 +315,35 @@
 
     function draw_table(_table_data, stops){
       console.log(_table_data);
-      let newRows = tbody.selectAll('tr')
+      let newRows = tbody.selectAll('g')
                          .data(table_data);
       let _exit = newRows.exit().remove();
       let _enter = newRows.enter()
-                          .append("tr")
+                          .append('g')
                           .attr('id', d => d.stopid)
-                          .selectAll('td')
-                          .data(d => [d.stopid, d.ride, d.leave]);
-
-      let _col_update = _enter.transition()
-                              .text(d => d);
-
-      let col_enter = _enter.enter()
-                          .append('td')
+                          .attr('transform', (_,i) => translate(0, i*cell_height))
+                          .selectAll('text')
+                          .data(d => [d.stopid, d.ride, d.leave, d.name])
+                          .enter()
+                            .append('text')
+                            .attr('x', (_,i) => i * cell_width)
+                            .attr('y', 30)
+                            .attr('width', cell_width)
+                            .attr('height', cell_height)
+                            .attr('font-weight', 'normal')
                             .text(d => d)
-                            .attr('width', '80px')
-                            .attr('height', '40px')
-                            .attr('align', 'left')
-                            .attr('text-layout', 'fixed');
+                            .style('opacity', 0);;
 
-      let _update = newRows.transition()
-                           .attr('id', d => d.stopid)
-                           .selectAll('td');
+      let _update = newRows.attr('id', d => d.stopid)
+             .selectAll('text')
+             .data(d => [d.stopid, d.ride, d.leave, d.name])
+             .transition()
+             .attr('x', (_,i) => i * cell_width)
+             .attr('font-weight', 'normal')
+             .text(d => d);
+
+      _enter.transition().duration(1000).style('opacity', 1);
+
 
 
   }
