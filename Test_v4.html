@@ -278,6 +278,8 @@
 
       console.log("This is log for bar? line? graph");
       console.log(graph_data);
+		
+			draw_chart(graph_data);
 
       for(let i = 0 ; i < 24 ; table2_data.push({hour: (i++), ride: 0, leave: 0}));
 
@@ -382,6 +384,20 @@
 
 
   }
+	
+	function draw_chart(_graph_data) {
+		let minY = Math.min.apply(null, _graph_data.map(a => a.ride));
+		let maxY = Math.max.apply(null, _graph_data.map(a => a.ride));
+		
+		let chartyScale = d3.scaleLinear()
+			.domain([minY, maxY])
+			.range([chart_height, 0]);
+			
+		chart_svg.selectAll('.y_axis')
+			.transition()
+			.duration(1000)
+			.call(d3.axisLeft(chartyScale));
+	}
 
 
   </script>
