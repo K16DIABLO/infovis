@@ -14,7 +14,7 @@
   </div>
   <svg id="table" style="position: absolute; top:150px; left:550px; width: 500px; height: 400px;">
   </svg>
-  <svg id="chart" style="position: absolute; top:650px; left:10px; width: 500px; height: 400px;">
+  <svg id="chart" style="position: absolute; top:550px; left:10px; width: 500px; height: 400px;">
   </svg>
 
   <p>
@@ -210,7 +210,7 @@
 	let chart_width = table_width - margin.left - margin.right;
 	let chart_height = table_height - margin.top - margin.bottom;
 	
-	let chartxScale = d3.scaleLinear()
+	let chartxScale = d3.scaleBand()
 		.domain(["sun", "mon", "tue", "wed", "thu", "fri", "sat"])
 		.range([0, chart_width]);
 		
@@ -221,7 +221,7 @@
 	let line_chart = d3.line()
 		.x(function(d) {return chartxScale(d.x); })
 		.y(function(d) {return chartyScale(d.y); })
-		.defined(function(d) return d.y; });
+		.defined(function(d) {return d.y; });
 	
 	chart_svg.append('g')
 		.attr('class', 'x_axis')
