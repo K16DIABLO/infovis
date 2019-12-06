@@ -14,6 +14,8 @@
   </div>
   <svg id="table" style="position: absolute; top:150px; left:550px; width: 500px; height: 400px;">
   </svg>
+  <svg id="chart" style="position: absolute; top:650px; left:10px; width: 500px; height: 400px;">
+  </svg>
 
   <p>
     <button onclick="setBounds()">지도 범위 재설정 하기</button>
@@ -31,6 +33,7 @@
   let cell_height = 30;
   let table_width = 500;
   let table_height = 400;
+	let margin = {top: 40, right: 40, bottom: 40, left: 40};
   let padding = 20;
   var raw_data = [];
   var raw_time_data = [];
@@ -196,6 +199,38 @@
         .attr('align', 'center')
         .attr('text-layout', 'fixed')
         .text(d => d);
+
+	//Chart
+	let chart_svg = d3.select('body').select('svg#chart')
+//		.attr('width', table_width + margin.left + margin.right)
+//		.attr('height', table_height + margin.top + margin.bottom)
+		.append('g')
+		.attr('transform', translate(margin.left, margin.bottom));
+	
+	let chart_width = table_width - margin.left - margin.right;
+	let chart_height = table_height - margin.top - margin.bottom;
+	
+	let chartxScale = d3.scaleLinear()
+		.domain(["sun", "mon", "tue", "wed", "thu", "fri", "sat"])
+		.range([0, chart_width]);
+		
+	let chartyScale = d3.scaleLinear()
+		.domain([0, 10000])
+		.range([chart_height, 0]);
+		
+	let line_chart = d3.line()
+		.x(function(d) {return chartxScale(d.x); })
+		.y(function(d) {return chartyScale(d.y); })
+		.defined(function(d) return d.y; });
+	
+	chart_svg.append('g')
+		.attr('class', 'x_axis')
+		.attr('transform', translate(0, chart_height))
+		.call(d3.axisBottom(chartxScale));
+		
+	chart_svg.append('g')
+		.attr('class', 'y_axis')
+		.call(d3.axisLeft(chartyScale));
 
   function update_data(raw_data, stops){
       //Initialize table entries
