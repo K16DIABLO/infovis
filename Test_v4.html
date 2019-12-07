@@ -33,16 +33,19 @@
   let cell_height = 30;
   let table_width = 500;
   let table_height = 400;
+  let chart_width = 500;
+  let chart_height = 400;
 	let margin = {top: 40, right: 40, bottom: 40, left: 40};
   let padding = 20;
-  var raw_data = [];
-  var raw_time_data = [];
+  let raw_data = [];
+  let raw_time_data = [];
+  let color = d3.scaleOrdinal(d3.schemeSet3);
 
-  var graph_data = [];
-  var table_data = [];
-  var table2_data = [];
+  let graph_data = [];
+  let table_data = [];
+  let table2_data = [];
 
-  var cols = ['Stop ID', 'ride', 'leave', 'Stop name'];
+  let cols = ['Stop ID', 'ride', 'leave', 'Stop name'];
 
   //Import CSV data
   d3.csv("data_201908.csv").then(function(data)
@@ -201,36 +204,39 @@
         .text(d => d);
 
 	//Chart
-	let chart_svg = d3.select('body').select('svg#chart')
+	let chart = d3.select('body').select('svg#chart')
 //		.attr('width', table_width + margin.left + margin.right)
 //		.attr('height', table_height + margin.top + margin.bottom)
 		.append('g')
+    .attr('id', 'chart')
 		.attr('transform', translate(margin.left, margin.bottom));
-	
-	let chart_width = table_width - margin.left - margin.right;
-	let chart_height = table_height - margin.top - margin.bottom;
-	
+
+	let chart_svg_width = table_width - margin.left - margin.right;
+	let chart_svg_height = table_height - margin.top - margin.bottom;
+
 	let chartxScale = d3.scaleBand()
-		.domain(["sun", "mon", "tue", "wed", "thu", "fri", "sat"])
-		.range([0, chart_width]);
-		
+                    		.domain(["sun", "mon", "tue", "wed", "thu", "fri", "sat"])
+                    		.range([0, chart_svg_width])
+                        .padding(0.1);
+
 	let chartyScale = d3.scaleLinear()
-		.domain([0, 10000])
-		.range([chart_height, 0]);
-		
+                    		.domain([0, 10000])
+                    		.range([chart_svg_height, 0]);
+
 	let line_chart = d3.line()
-		.x(function(d) {return chartxScale(d.x); })
-		.y(function(d) {return chartyScale(d.y); })
-		.defined(function(d) {return d.y; });
-	
-	chart_svg.append('g')
-		.attr('class', 'x_axis')
-		.attr('transform', translate(0, chart_height))
-		.call(d3.axisBottom(chartxScale));
-		
-	chart_svg.append('g')
-		.attr('class', 'y_axis')
-		.call(d3.axisLeft(chartyScale));
+                    		.x(function(d) {return chartxScale(d.x); })
+                    		.y(function(d) {return chartyScale(d.y); })
+                    		.defined(function(d) {return d.y; });
+
+	let chart_xAxis = chart.append('g')
+                        		.attr('class', 'x_axis')
+                        		.attr('transform', translate(10, chart_svg_height))
+                        		.call(d3.axisBottom(chartxScale));
+
+	let chart_yAxis = chart.append('g')
+                        		.attr('class', 'y_axis')
+                            .attr('transform', translate(10, 0))
+                        		.call(d3.axisLeft(chartyScale));
 
   function update_data(raw_data, stops){
       //Initialize table entries
@@ -278,7 +284,7 @@
 
       console.log("This is log for bar? line? graph");
       console.log(graph_data);
-		
+
 			draw_chart(graph_data);
 
       for(let i = 0 ; i < 24 ; table2_data.push({hour: (i++), ride: 0, leave: 0}));
@@ -379,24 +385,93 @@
              .attr('font-weight', 'normal')
              .text(d => d);
 
-      _enter.transition().duration(1000).style('opacity', 1);
+      _enter.transition().delay(500).duration(1000).style('opacity', 1);
 
 
 
   }
-	
+
 	function draw_chart(_graph_data) {
-		let minY = Math.min.apply(null, _graph_data.map(a => a.ride));
-		let maxY = Math.max.apply(null, _graph_data.map(a => a.ride));
-		
+    let minY = Math.min(Math.min.apply(null, _graph_data.map(a => a.ride)),Math.min.apply(null, _graph_data.map(a => a.leave)));
+    let maxY = Math.max(Math.max.apply(null, _graph_data.map(a => a.ride)), Math.max.apply(null, _graph_data.map(a => a.leave)));
+
 		let chartyScale = d3.scaleLinear()
-			.domain([minY, maxY])
-			.range([chart_height, 0]);
-			
-		chart_svg.selectAll('.y_axis')
-			.transition()
-			.duration(1000)
-			.call(d3.axisLeft(chartyScale));
+			.domain([Math.max(minY-10000,0), maxY])
+			.range([chart_svg_height, 0]);
+
+    let ride_bar_chart = chart.selectAll('g#ride_bar')
+                          .data([_graph_data]);
+    ride_bar_chart.exit().remove();
+    let leave_bar_chart = chart.selectAll('g#leave_bar')
+                          .data([_graph_data]);
+    leave_bar_chart.exit().remove();
+
+    let ride_bar = ride_bar_chart.enter()
+                          .append('g')
+                          .attr('id', 'ride_bar')
+                          .attr('width', chart_svg_width)
+                          .attr('height', chart_svg_height)
+                          .selectAll('rect')
+                          .data(d => d);
+    let leave_bar = leave_bar_chart.enter()
+                         .append('g')
+                         .attr('id', 'leave_bar')
+                         .attr('width', chart_svg_width)
+                         .attr('height', chart_svg_height)
+                         .selectAll('rect')
+                         .data(d => d);
+
+    let ride_enter = ride_bar.enter()
+                              .append('rect')
+                              .attr('id', d => d.day+'_ride')
+                              .attr('x', d => chartxScale(d.day))
+                              .attr('y', d => chartyScale(+d.ride))
+                              .attr('height', d => chart_svg_height - chartyScale(+d.ride))
+                              .attr('width', chartxScale.bandwidth()/2)
+                              .attr('transform', translate(10, 0))
+                              .style('fill', d => color(2))
+                              .style('opacity', 0);
+    let leave_enter = leave_bar.enter()
+                                .append('rect')
+                                .attr('id', d => d.day+'_leave')
+                                .attr('x', d => chartxScale(d.day) + chartxScale.bandwidth()/2)
+                                .attr('y', d => chartyScale(+d.leave))
+                                .attr('height', d => chart_svg_height - chartyScale(+d.leave))
+                                .attr('width', chartxScale.bandwidth()/2)
+                                .attr('transform', translate(10, 0))
+                                .style('fill', d => color(3))
+                                    .style('opacity', 0);
+
+    let ride_update = ride_bar_chart.selectAll('rect')
+                          .data(d => d)
+                          .transition()
+                          .attr('id', d => d.day+'_ride')
+                          .attr('x', d => chartxScale(d.day))
+                          .attr('y', d => chartyScale(+d.ride))
+                          .attr('height', d => chart_svg_height - chartyScale(+d.ride))
+                          .attr('width', chartxScale.bandwidth()/2)
+                          .attr('transform', translate(10, 0))
+                          .style('fill', d => color(2))
+                          .delay(500).duration(1000);
+
+    let leave_update = leave_bar_chart.selectAll('rect')
+                          .data(d => d)
+                          .transition()
+                          .attr('id', d => d.day+'_leave')
+                          .attr('x', d => chartxScale(d.day) + chartxScale.bandwidth()/2)
+                          .attr('y', d => chartyScale(+d.leave))
+                          .attr('height', d => chart_svg_height - chartyScale(+d.leave))
+                          .attr('width', chartxScale.bandwidth()/2)
+                          .attr('transform', translate(10, 0))
+                          .style('fill', d => color(3))
+                          .delay(500).duration(1000);
+
+    ride_enter.transition().duration(1000).style('opacity', 1);
+    leave_enter.transition().duration(1000).style('opacity', 1);
+
+		chart_yAxis.transition()
+			           .duration(1000)
+			           .call(d3.axisLeft(chartyScale));
 	}
 
 
