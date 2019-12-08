@@ -49,6 +49,8 @@
   let graph_data = [];
   let table_data = [];
   let table2_data = [];
+
+  let selected_point = 0;
   let target_stop_ids = [];
 
   let cols = ['Stop ID', 'ride', 'leave', 'Stop name'];
@@ -175,6 +177,7 @@
   }
   function mouseClickListener(map, marker, point){
     return function(){
+      selected_point = point;
       target_stop_ids = [];
       table_data = update_table(point.stops);
       update_day_graph(table_data, point.stops);
@@ -184,20 +187,47 @@
   }
   function click_func(elm){
     console.log(elm.parentNode);
-    if(target_stop_ids.includes(elm.parentNode.id)){
-      var index = target_stop_ids.indexOf(elm.parentNode.id);
-      if (index !== -1) target_stop_ids.splice(index, 1);
+
+    if(target_stop_ids.includes(parseInt(elm.parentNode.id))) {
+      var index = target_stop_ids.indexOf(parseInt(elm.parentNode.id));
+
+      if (index !== -1) {
+        target_stop_ids.splice(index, 1);
+      }
+
       d3.select(elm.parentNode)
           .selectAll('text')
           .attr('font-weight', 'normal');
     }
-    else{
-      target_stop_ids.push(elm.parentNode.id);
+    else {
+      target_stop_ids.push(parseInt(elm.parentNode.id));
       d3.select(elm.parentNode)
           .selectAll('text')
           .attr('font-weight', 'bold');
     }
-    console.log(target_stop_ids);
+
+    //console.log(target_stop_ids);
+    //let array1234 = [];
+    //for(let i = 0 ; i < target_stop_ids.length ; array1234.push(parseInt(target_stop_ids[i++])));
+    //console.log(array1234);
+
+    //Update graph2 and do something...
+/*
+    if(array1234.length)
+    {
+      update_time_data(array1234);
+      return;	
+    }
+*/
+	  
+    if(target_stop_ids.length)
+    {
+      update_time_data(target_stop_ids);
+      return;	
+    }
+
+    //Nothing is selected
+    update_time_data(selected_point.stops);
 
   }
   function translate(x, y) { return 'translate(' + x + ', ' + y +')'; }
@@ -341,7 +371,7 @@
       let table_data_top10 = [];
       for(let i = 0 ; i < (table_data.length < 10 ? table_data.length : 10) ; table_data_top10.push(table_data[i++]));
       draw_table(table_data_top10, stops);
-      //draw_table(table_data, stops);
+
       return table_data;
   }
   function update_day_graph(table_data, stops){
@@ -372,6 +402,7 @@
       draw_chart(graph_data);
   }
   function update_time_data(stops){
+      console.log(stops);
       table2_data = [];
       for(let i = 0 ; i < 24 ; table2_data.push({hour: (i++), ride: 0, leave: 0, total: 0}));
       for(let i = 0 ; i < raw_time_data.length ; i++){
