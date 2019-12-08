@@ -301,7 +301,6 @@
   function update_data(raw_data, stops){
       //Initialize table entries
       table_data = [];
-      // table2_data = [];
       for(let i = 0 ; i < stops.length ; table_data.push({stopid: stops[i++], ride: 0, leave: 0, name:''}));
 
       //Get values and update table
@@ -330,7 +329,7 @@
       //사용일자: 0801: Thursday
       //Sun: 0, Mon: 1, Sat: 6
       graph_data = [];
-      table2_data = [];
+
       days_ = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
       for(let i = 0 ; i < days_.length ; graph_data.push({day: days_[i++], ride: 0, leave: 0}));
@@ -356,9 +355,8 @@
 
       draw_chart(graph_data);
 
-
+      table2_data = [];
       for(let i = 0 ; i < 24 ; table2_data.push({hour: (i++), ride: 0, leave: 0, total: 0}));
-
       for(let i = 0 ; i < raw_time_data.length ; i++){
         for(let j = 0 ; j < stops.length ; j++){
           if(parseInt(raw_time_data[i].버스정류장ID) !== stops[j]){
@@ -430,7 +428,6 @@
       for(let i = 0 ; i < 10 ; table2_top10.push(table2_data[i++]));
 
       console.log("This is log for time data (Feat. stupid javascript array)");
-      console.log(table2_top10);
       draw_table2(table2_top10, stops);
 
     }
@@ -567,7 +564,7 @@
     let _exit = newRows.exit().remove();
     let _enter = newRows.enter()
                         .append('g')
-                        .attr('id', d => d.stopid)
+                        .attr('id', d => d.hour)
                         .attr('transform', (_,i) => translate(0, i*cell_height))
                         .selectAll('text')
                         .data(d => [d.hour, d.ride, d.leave])
@@ -581,9 +578,9 @@
                           .text(d => d)
                           .style('opacity', 0);;
 
-    let _update = newRows.attr('id', d => d.stopid)
+    let _update = newRows.attr('id', d => d.hour)
            .selectAll('text')
-           .data(d => [d.stopid, d.ride, d.leave, d.name])
+           .data(d => [d.hour, d.ride, d.leave])
            .transition()
            .attr('x', (_,i) => i * cell_width)
            .attr('font-weight', 'normal')
