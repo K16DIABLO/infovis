@@ -16,6 +16,8 @@
   </svg>
   <svg id="chart" style="position: absolute; top:550px; left:10px; width: 500px; height: 400px;">
   </svg>
+  <svg id="table2" style="position: absolute; top:550px; left:550px; width: 500px; height: 400px;">
+  </svg>
 
   <p>
     <button onclick="setBounds()">지도 범위 재설정 하기</button>
@@ -35,7 +37,7 @@
   let table_height = 400;
   let chart_width = 500;
   let chart_height = 400;
-	let margin = {top: 40, right: 40, bottom: 40, left: 40};
+  let margin = {top: 40, right: 40, bottom: 40, left: 40};
   let padding = 20;
   let raw_data = [];
   let raw_time_data = [];
@@ -46,6 +48,7 @@
   let table2_data = [];
 
   let cols = ['Stop ID', 'ride', 'leave', 'Stop name'];
+  let t2_cols = ['Hours', 'ride', 'leave'];
 
   //Import CSV data
   d3.csv("data_201908.csv").then(function(data)
@@ -203,6 +206,31 @@
         .attr('text-layout', 'fixed')
         .text(d => d);
 
+  //Table2
+  let table2 = d3.select('body').select('svg#table2');
+  let thead2 = table2.append('g')
+                     .attr('id', 'thead2')
+                     .attr('width', table_width - 2 * padding)
+                     .attr('height', cell_height)
+                     .attr('transform', translate(padding, padding));
+
+  let tbody2 = table2.append('g')
+                     .attr('transform', translate(padding, padding+5))
+                     .attr('id', 'tbody2')
+                     .attr('width', table_width)
+                     .attr('height', table_height - cell_height);
+  
+  thead2.selectAll('text')
+        .data(t2_cols)
+	.enter()
+	.append('text')
+	.attr('transform', (_,i) => translate(i*cell_width, 0))
+        .attr('width', cell_width)
+        .attr('height', cell_height)
+        .attr('align', 'center')
+        .attr('text-layout', 'fixed')
+        .text(d => d);
+
 	//Chart
 	let chart = d3.select('body').select('svg#chart')
 //		.attr('width', table_width + margin.left + margin.right)
@@ -257,7 +285,16 @@
         }
       }
 
+      table_data.sort(function(lhs, rhs){
+        return(lhs.ride + lhs.leave <= rhs.ride + rhs.leave ? 1 : -1);
+      });
+
       draw_table(table_data, stops);
+
+
+
+
+
       //사용일자: 0801: Thursday
       //Sun: 0, Mon: 1, Sat: 6
       graph_data = [];
@@ -285,9 +322,10 @@
       console.log("This is log for bar? line? graph");
       console.log(graph_data);
 
-			draw_chart(graph_data);
+      draw_chart(graph_data);
 
-      for(let i = 0 ; i < 24 ; table2_data.push({hour: (i++), ride: 0, leave: 0}));
+
+      for(let i = 0 ; i < 24 ; table2_data.push({hour: (i++), ride: 0, leave: 0, total: 0}));
 
       for(let i = 0 ; i < raw_time_data.length ; i++){
         for(let j = 0 ; j < stops.length ; j++){
@@ -350,16 +388,28 @@
         }
       }
 
+      //Sort by total in/out and leave top 10 only.
+
+      table2_data.sort(function(lhs, rhs){
+        return(lhs.ride + lhs.leave <= rhs.ride + rhs.leave ? 1 : -1);
+      });
+
+      let table2_top10 = [];
+      for(let i = 0 ; i < 10 ; table2_top10.push(table2_data[i++]));
+
       console.log("This is log for time data (Feat. stupid javascript array)");
-      console.log(table2_data);
+      console.log(table2_top10);
+      draw_table2(table2_top10, stops);
 
     }
 
 
     function draw_table(_table_data, stops){
+      console.log("Draw table");
       console.log(_table_data);
+
       let newRows = tbody.selectAll('g')
-                         .data(table_data);
+                         .data(_table_data);
       let _exit = newRows.exit().remove();
       let _enter = newRows.enter()
                           .append('g')
@@ -391,7 +441,7 @@
 
   }
 
-	function draw_chart(_graph_data) {
+  function draw_chart(_graph_data) {
     let minY = Math.min(Math.min.apply(null, _graph_data.map(a => a.ride)),Math.min.apply(null, _graph_data.map(a => a.leave)));
     let maxY = Math.max(Math.max.apply(null, _graph_data.map(a => a.ride)), Math.max.apply(null, _graph_data.map(a => a.leave)));
 
@@ -472,7 +522,46 @@
 		chart_yAxis.transition()
 			           .duration(1000)
 			           .call(d3.axisLeft(chartyScale));
-	}
+  }
+
+  function draw_table2(_table_data, stops)
+  {
+    console.log("Draw2");
+    console.log(_table_data);
+
+    let newRows = tbody2.selectAll('g')
+	                .data(_table_data);
+
+    let _exit = newRows.exit().remove();
+    let _enter = newRows.enter()
+                        .append('g')
+                        .attr('id', d => d.stopid)
+                        .attr('transform', (_,i) => translate(0, i*cell_height))
+                        .selectAll('text')
+                        .data(d => [d.hour, d.ride, d.leave])
+                        .enter()
+                          .append('text')
+                          .attr('x', (_,i) => i * cell_width)
+                          .attr('y', 30)
+                          .attr('width', cell_width)
+                          .attr('height', cell_height)
+                          .attr('font-weight', 'normal')
+                          .text(d => d)
+                          .style('opacity', 0);;
+
+    let _update = newRows.attr('id', d => d.stopid)
+           .selectAll('text')
+           .data(d => [d.stopid, d.ride, d.leave, d.name])
+           .transition()
+           .attr('x', (_,i) => i * cell_width)
+           .attr('font-weight', 'normal')
+           .text(d => d);
+
+    _enter.transition().delay(500).duration(1000).style('opacity', 1);
+
+
+
+  }
 
 
   </script>
