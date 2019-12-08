@@ -49,6 +49,7 @@
   let graph_data = [];
   let table_data = [];
   let table2_data = [];
+  let target_stop_ids = [];
 
   let cols = ['Stop ID', 'ride', 'leave', 'Stop name'];
   let t2_cols = ['Hours', 'ride', 'leave'];
@@ -174,9 +175,28 @@
   }
   function mouseClickListener(map, marker, point){
     return function(){
+      target_stop_ids = [];
       update_data(raw_data, point.stops);
       // draw_table(raw_data, point.stops);
     }
+  }
+  function click_func(elm){
+    console.log(elm.parentNode);
+    if(target_stop_ids.includes(elm.parentNode.id)){
+      var index = target_stop_ids.indexOf(elm.parentNode.id);
+      if (index !== -1) target_stop_ids.splice(index, 1);
+      d3.select(elm.parentNode)
+          .selectAll('text')
+          .attr('font-weight', 'normal');
+    }
+    else{
+      target_stop_ids.push(elm.parentNode.id);
+      d3.select(elm.parentNode)
+          .selectAll('text')
+          .attr('font-weight', 'bold');
+    }
+    console.log(target_stop_ids);
+
   }
   function translate(x, y) { return 'translate(' + x + ', ' + y +')'; }
 
@@ -449,6 +469,7 @@
                             .attr('width', cell_width)
                             .attr('height', cell_height)
                             .attr('font-weight', 'normal')
+                            .on('click', function(){click_func(this)})
                             .text(d => d)
                             .style('opacity', 0);;
 
