@@ -206,27 +206,16 @@
           .attr('font-weight', 'bold');
     }
 
-    //console.log(target_stop_ids);
-    //let array1234 = [];
-    //for(let i = 0 ; i < target_stop_ids.length ; array1234.push(parseInt(target_stop_ids[i++])));
-    //console.log(array1234);
-
-    //Update graph2 and do something...
-/*
-    if(array1234.length)
-    {
-      update_time_data(array1234);
-      return;	
-    }
-*/
-	  
+    //Update graph
     if(target_stop_ids.length)
     {
+      update_day_graph(table_data, target_stop_ids);
       update_time_data(target_stop_ids);
       return;	
     }
 
     //Nothing is selected
+    update_day_graph(table_data, selected_point.stops);
     update_time_data(selected_point.stops);
 
   }
@@ -383,7 +372,8 @@
 
       for(let i = 0 ; i < raw_data.length ; i++){
         for(let j = 0 ; j < table_data.length ; j++){
-          if(parseInt(raw_data[i].버스정류장ARS번호) !== table_data[j].stopid){
+          //if(parseInt(raw_data[i].버스정류장ARS번호) !== table_data[j].stopid){
+          if(parseInt(raw_data[i].버스정류장ARS번호) !== stops[j]){
               continue;
           }
 
@@ -520,7 +510,8 @@
   }
 
   function draw_chart(_graph_data) {
-    let minY = Math.min(Math.min.apply(null, _graph_data.map(a => a.ride)),Math.min.apply(null, _graph_data.map(a => a.leave)));
+    //let minY = Math.min(Math.min.apply(null, _graph_data.map(a => a.ride)),Math.min.apply(null, _graph_data.map(a => a.leave)));
+    let minY = 0;
     let maxY = Math.max(Math.max.apply(null, _graph_data.map(a => a.ride)), Math.max.apply(null, _graph_data.map(a => a.leave)));
 
 		let chartyScale = d3.scaleLinear()
@@ -603,7 +594,8 @@
   }
 
   function draw_chart2(_graph_data) {
-    let minY = Math.min(Math.min.apply(null, _graph_data.map(a => a.ride)),Math.min.apply(null, _graph_data.map(a => a.leave)));
+    //let minY = Math.min(Math.min.apply(null, _graph_data.map(a => a.ride)),Math.min.apply(null, _graph_data.map(a => a.leave)));
+    let minY = 0;
     let maxY = Math.max(Math.max.apply(null, _graph_data.map(a => a.ride)), Math.max.apply(null, _graph_data.map(a => a.leave)));
 
 		let chartyScale = d3.scaleLinear()
