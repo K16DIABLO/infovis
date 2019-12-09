@@ -211,7 +211,7 @@
     {
       update_day_graph(table_data, target_stop_ids);
       update_time_data(target_stop_ids);
-      return;	
+      return;
     }
 
     //Nothing is selected
@@ -672,7 +672,7 @@
     ride_enter.transition().duration(1000).style('opacity', 1);
     leave_enter.transition().duration(1000).style('opacity', 1);
 
-		chart_yAxis.transition()
+		chart2_yAxis.transition()
 			           .duration(1000)
 			           .call(d3.axisLeft(chartyScale));
   }
